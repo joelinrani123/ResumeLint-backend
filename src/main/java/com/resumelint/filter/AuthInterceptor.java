@@ -8,6 +8,7 @@ import com.resumelint.security.JwtService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -31,6 +32,13 @@ public class AuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
+        // Let CORS preflight requests through untouched — they carry no
+        // Authorization header by design, and blocking them here causes the
+        // browser to fail the preflight and block the real request.
+        if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+            return true;
+        }
+
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             writeUnauthorized(response, "Unauthorized");
